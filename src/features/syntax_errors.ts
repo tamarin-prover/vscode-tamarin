@@ -24,6 +24,7 @@ function get_child_index(node : Parser.SyntaxNode): number|null{
 
 }
 
+// Get the text corresponding to a node range 
 export function getName(node : Parser.SyntaxNode| null, editor: vscode.TextEditor): string {
     if(node && node.isNamed ){
         return(editor.document.getText(new Range(editor.document.positionAt(node.startIndex),editor.document.positionAt(node.endIndex))));
@@ -54,6 +55,7 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
     let diags: vscode.Diagnostic[] = [];
     let text = editor.document.getText();
     const tree =  parser.parse(text);
+
     
     function build_error_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, message : string){
         let start = node.startIndex;
@@ -64,7 +66,7 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
         }
     }
 
-
+    // This is where i tried to detect particular cases for syntax errors based on nodes position 
     function typesOfError(node : Parser.SyntaxNode, editeur: vscode.TextEditor){
         if(node.grammarType === 'theory' || node.nextSibling?.nextSibling?.grammarType === 'begin' || node.nextSibling?.grammarType === 'begin'){
             build_error_display(node, editeur, "MISSING 'theory' or 'begin'")
@@ -95,8 +97,8 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
             build_error_display(node, editeur, node.toString().slice(1,-1));
         }
     }
-
-    // Find error or warning nodes
+ 
+    // PLace where missing and error nodes are detected, then builds the error
     function findMatches(node : Parser.SyntaxNode, editeur: vscode.TextEditor ) {
         if ((node.isMissing)) {
             let myId = get_child_index(node);
@@ -135,16 +137,19 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
             diagnostics.set(editeur.document.uri, diags);
             return;
         }
+        // This is used to send a warning if there is code after end node 
         else if (node.grammarType === 'end'){
         const endPosition = editor.document.positionAt(node.endIndex);
         const endOfDocumentPosition = editor.document.positionAt(editor.document.getText().length);
         const unreachableRange = new vscode.Range(endPosition, endOfDocumentPosition);
-        const unreachableDecoration = vscode.window.createTextEditorDecorationType({
-            textDecoration: 'none; opacity: 0.5; background-color: none; border: none;',
+        let unreachableDecoration = vscode.window.createTextEditorDecorationType({
+            textDecoration: 'none; opacity: 1; background-color: none; border: none;',
             dark: {
-                textDecoration: 'none; opacity: 0.5; background-color: none; border: none;',
+                textDecoration: 'none; opacity: 1; background-color: none; border: none;',
             }
         });
+        // I tried to do sth transparent with opacity 0.5 but it brought bugs
+
         //Part to detect if there is code after the end
         let hasContentAfterEnd = false;
         const text = editor.document.getText();
@@ -165,17 +170,23 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
                 }
             }
         }
-        if (!hasContentAfterEnd) {
-            return;
-        }
-        editor.setDecorations(unreachableDecoration, [unreachableRange]);
-        const message = "Code unreachable";
-        const severity = vscode.DiagnosticSeverity.Warning;
-        const diagnostic = new vscode.Diagnostic(unreachableRange, message, severity);
-        diags.push(diagnostic);
+        
+        if (hasContentAfterEnd) {
+            // Clear existing decorations
+            editor.setDecorations(unreachableDecoration, []);
+        
+            // Apply new decorations
+            editor.setDecorations(unreachableDecoration, [unreachableRange]);
+        
+            const message = "Code unreachable";
+            const severity = vscode.DiagnosticSeverity.Warning;
+            const diagnostic = new vscode.Diagnostic(unreachableRange, message, severity);
+            diags.push(diagnostic);
+        } 
+
         }
 
-        
+        // Iterate over all the AST
         for (let child of node.children) {
             findMatches(child,editeur);
         }
@@ -191,9 +202,9 @@ export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.
 }
 
 
-//Main function
+// Main function everytime the document changes create a corresponding symbol table and seex syntax errors, could be improved 
 export function display_syntax_errors(context: vscode.ExtensionContext): void {
-    let first_time = 0;
+
     const changed_content = vscode.workspace.onDidChangeTextDocument((event) => {
         vscode.window.visibleTextEditors.forEach(async (editor) => {
             if (editor.document === event.document) {
@@ -204,15 +215,13 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
                     if (!fileName) {
                         throw new Error('Could not determine file name');
                     }  
-                    symbolTables.set(fileName, table);
-                    //console.log(symbolTables)   // usefull for debugging symbol table 
+                    symbolTables.set(fileName, await table);
+                    console.log(symbolTables)   // usefull for debugging symbol table 
                 }
             }
         });
     });
 
-    if(first_time === 0){
-    first_time ++
     vscode.window.visibleTextEditors.forEach(async (editor) => {
         const tree = await detect_errors(editor);
         if (tree) {
@@ -221,10 +230,10 @@ export function display_syntax_errors(context: vscode.ExtensionContext): void {
             if (!fileName) {
                 throw new Error('Could not determine file name');
             }  
-            symbolTables.set(fileName, table);  
+            symbolTables.set(fileName, await table);  
         }
     });
-}
+
 
     context.subscriptions.push(changed_content, diagnostics);  
 }

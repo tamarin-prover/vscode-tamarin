@@ -48,6 +48,10 @@
       "name": "keyword.operator"
     },
     {
+      "match": "\\b(#include|#ifded|#endif|#define)\\b",
+      "name": "entity.name.section"
+    },
+    {
       "match": "\\b([\\w]+)\\b\\s*\\(",
       "captures": {
         "1": {

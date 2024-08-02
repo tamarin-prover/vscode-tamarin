@@ -3,7 +3,7 @@ import Parser = require("web-tree-sitter");
 import {getName} from '../features/syntax_errors'
 import { check_reserved_facts, checks_with_table } from '../features/wellformedness_checks';
 import { Diagnostic } from 'vscode';
-import { rootCertificates } from 'tls';
+import path = require('path');
 
 export type CreateSymbolTableResult = {
     symbolTable: TamarinSymbolTable
@@ -11,10 +11,11 @@ export type CreateSymbolTableResult = {
 
 /* Function used to register the symbol table for each file */ 
 let diagCollection = vscode.languages.createDiagnosticCollection('Tamarin');
-export const createSymbolTable = (root : Parser.SyntaxNode, editor :vscode.TextEditor): CreateSymbolTableResult => {
+export const createSymbolTable = async (root : Parser.SyntaxNode, editor :vscode.TextEditor): Promise<CreateSymbolTableResult> => {
     let diags: Diagnostic[] = []; 
     const symbolTableVisitor = new SymbolTableVisitor();
-    let symbolTable = symbolTableVisitor.visit(root, editor, diags);
+    const symbolTable =  await  symbolTableVisitor.visit(root, editor, diags);
+
     symbolTable.setRootNodeEditorDiags(root, editor, diags);
     convert_linear_facts(symbolTable);
     checks_with_table(symbolTable, editor, diags, root)
@@ -36,6 +37,11 @@ function convert_linear_facts(ts : TamarinSymbolTable){
 used to find lemma or rule vars for example  */ 
 function find_variables(node : Parser.SyntaxNode): Parser.SyntaxNode[]{
     let vars : Parser.SyntaxNode[] = []
+    if( node.grammarType === DeclarationType.MVONF && node.parent?.grammarType === DeclarationType.Equation){
+        vars.push(node)
+        return vars
+    }
+       
     for( let child of node.children){
 
          //This is used to skip errors in proof methods modify it if you want to manage proof methods
@@ -126,9 +132,19 @@ export function get_range(node : Parser.SyntaxNode|null, editor : vscode.TextEdi
     return new vscode.Range(editor.document.positionAt(0), editor.document.positionAt(0))
 }
 
+//Function used to parse included files 
+export async function parseText(includedFileText : string):Promise<Parser.SyntaxNode>{
+    await Parser.init();
+    const parser = new Parser();
+    const parserPath = path.join(__dirname + '../../../', 'src', 'grammar', 'parser-tamarin.wasm'); //Charge la grammaire tree-sitter pour parser
+    const Tamarin = await Parser.Language.load(parserPath);
+    parser.setLanguage(Tamarin);
+    const tree = parser.parse(includedFileText);
+    return tree.rootNode
+}
+
+// Contains every node types used to detect symbols.
 export enum DeclarationType{
-    Arguments = 'arguments',
-    Variable = 'variable',
     CCLVariable = 'conclusion_variable',
     PRVariable = 'premise_variable',
     ActionFVariable = 'action_fact_variable',
@@ -160,6 +176,9 @@ export enum DeclarationType{
     MVONF = 'msg_var_or_nullary_fun',
     TMPV = 'temporal_var',
     FUNCP = 'function_pub',
+    FUNCPR = 'function_private',
+    FUNCD = 'function_destructor',
+    FUNCUST = 'function_custom',
     Builtin = 'built_in',
     LinearF = 'linear_fact',
     PersistentF =  'persistent_fact', 
@@ -184,6 +203,7 @@ export enum variable_types{
 
 export const ReservedFacts: string[] = ['Fr','In','Out','KD','KU','K','diff'] ;
 
+//List of existing builtins add new ones if necessary
 const ExistingBuiltIns : string[] = 
 [
     'diffie-hellman',
@@ -194,9 +214,10 @@ const ExistingBuiltIns : string[] =
     'revealing-signing',
     'bilinear-pairing',
     'xor',
+    'default',
 ]
 
-//First the name and then the arity 
+//First the name and then the arity also mind the order above (inv and 1 are diffie-hellman functions etc …)
 const AssociatedFunctions: string[][] = 
 [
 ['inv','1', '1', '0'],
@@ -206,7 +227,8 @@ const AssociatedFunctions: string[][] =
 ['sign', '2', 'verify', '3', 'pk', '1'],
 ['revealSign', '2', 'revealVerify', '3', 'getMessage', '1', 'pk', '1'],
 ['pmult', '2', 'em', '2'],
-[' XOR', '2', 'zero', '0'],
+['XOR', '2', 'zero', '0'],
+['fst', '1', 'snd', '1', 'pair', '2']
 ]
 
 
@@ -217,13 +239,22 @@ class SymbolTableVisitor{
     private context: undefined | Parser.Tree = undefined){
         this.context = context
     };
+    private visitcounter : number = 0; // Used to add fst snd and pair symbols only once
     
     protected defaultResult(): TamarinSymbolTable {
         return this.symbolTable;
     };
 
     /* Method that builds the symbol table adding every symbols while visiting the AST*/
-    public visit(root : Parser.SyntaxNode, editor : vscode.TextEditor, diags: vscode.Diagnostic[]): TamarinSymbolTable{
+    public async visit(root : Parser.SyntaxNode, editor : vscode.TextEditor, diags: vscode.Diagnostic[]): Promise<TamarinSymbolTable>{
+        //Include default functions but the neither the nodes or the name range are correct
+        if(this.visitcounter === 0){
+            this.visitcounter ++ ;
+            for (let k = 0 ; k < AssociatedFunctions[AssociatedFunctions.length - 1].length; k += 2){
+                this.registerfucntion(root, DeclarationType.Functions, AssociatedFunctions[AssociatedFunctions.length - 1][k], parseInt(AssociatedFunctions[AssociatedFunctions.length - 1][k+1]), root, get_range(root, editor));
+            }
+        }
+
         for (let i = 0; i < root.children.length; i++){
             const child = root.child(i);
             if((child?.grammarType === DeclarationType.Lemma && (root.grammarType === 'lemma'|| root.grammarType === 'diff_lemma') && root.parent !== null)){
@@ -233,7 +264,7 @@ class SymbolTableVisitor{
             }
             else if (child?.grammarType === DeclarationType.Restriction && root.grammarType === 'restriction' && root.parent !== null){
                 this.registerident(root, DeclarationType.Restriction, getName(child?.nextSibling, editor), root.parent ,get_range(child?.nextSibling, editor))
-                this.register_facts_searched(root, editor, root, DeclarationType.ActionF);
+                this.register_facts_searched(root, editor, root);
                 this.register_vars_lemma(root, DeclarationType.RestrictionVariable, editor)
             }
             else if (child?.grammarType === DeclarationType.Rule && root.grammarType === 'simple_rule' && root.parent !== null){
@@ -248,7 +279,7 @@ class SymbolTableVisitor{
             }
             else if(child?.grammarType === DeclarationType.Functions){
                 for (let grandchild of child.children){
-                    if(grandchild.grammarType === DeclarationType.FUNCP){
+                    if(grandchild.grammarType === DeclarationType.FUNCP || grandchild.grammarType === DeclarationType.FUNCPR || grandchild.grammarType === DeclarationType.FUNCD || grandchild.grammarType === DeclarationType.FUNCUST){
                         this.registerfucntion(grandchild, DeclarationType.Functions, getName(grandchild.child(0),editor), parseInt(getName(grandchild.child(2),editor)), root, get_range(grandchild.child(0),editor));
                     }
                 }
@@ -279,6 +310,7 @@ class SymbolTableVisitor{
                         for(let ggchild of grandchild.children){
                             if(ggchild.grammarType === "="){
                                 eqcount ++ ;
+                                continue;
                             }
                             if(eqcount === 0){
                                 this.register_vars_rule(ggchild, DeclarationType.LEquationVariable, editor, grandchild);
@@ -287,6 +319,7 @@ class SymbolTableVisitor{
                                 this.register_vars_rule(ggchild, DeclarationType.REquationVariable, editor, grandchild);
 
                             }
+                            
                         }
                     }
 
@@ -307,7 +340,7 @@ class SymbolTableVisitor{
                                 this.registerfucntion(grandchild, DeclarationType.Functions, AssociatedFunctions[built_in_index][k], parseInt(AssociatedFunctions[built_in_index][k+1]), root, get_range(grandchild, editor));
                             }
                         }
-                        if(builtinType === 'asymmetric-encryption'||'signing'||'revealing-signing'){ pkcount ++ }
+                        if(builtinType === 'asymmetric-encryption'|| builtinType ==='signing'|| builtinType ==='revealing-signing'){ pkcount ++ }
                     }
                     
                 }
@@ -336,15 +369,58 @@ class SymbolTableVisitor{
             else if( child?.grammarType === DeclarationType.Rule_let_block){
                 this.register_vars_rule(child, DeclarationType.PRVariable, editor, root)
             }
+            /*else if (child?.grammarType === 'include'){
+                const fileName = getName(child.child(2), editor);
+                const currentFileDir = path.dirname(editor.document.uri.fsPath);
+                const filePath = path.join(currentFileDir, fileName);
+                const includedFileUri = vscode.Uri.file(filePath);
+                const includedDocument = await vscode.workspace.openTextDocument(includedFileUri);
+                //Fake editor containing the right document to manage the includes 
+                const includedEditor = {
+                    document: includedDocument,
+                    selection: new vscode.Selection(0, 0, 0, 0),
+                    selections: [new vscode.Selection(0, 0, 0, 0)], // Example selections
+                    options: { tabSize: 4, insertSpaces: true }, // Example options
+                    viewColumn: vscode.ViewColumn.One, // Example view column
+                    visibleRanges: [new vscode.Range(0, 0, 0, 0)], // Example visible ranges
+                    edit(callback: (editBuilder: vscode.TextEditorEdit) => void, options?: { undoStopBefore: boolean; undoStopAfter: boolean }): Thenable<boolean> {
+                        throw new Error('Method not implemented.');
+                    },
+                    insertSnippet(snippet: vscode.SnippetString | vscode.SnippetString[], location?: vscode.Range | vscode.Position | vscode.Position[], options?: { undoStopBefore: boolean; undoStopAfter: boolean }): Thenable<boolean> {
+                        throw new Error('Method not implemented.');
+                    },
+                    setDecorations(decorationType: vscode.TextEditorDecorationType, rangesOrOptions: vscode.Range[] | vscode.DecorationOptions[]): void {
+                        throw new Error('Method not implemented.');
+                    },
+                    revealRange(range: vscode.Range, revealType?: vscode.TextEditorRevealType): void {
+                        throw new Error('Method not implemented.');
+                    },
+                    show(column?: vscode.ViewColumn): void {
+                        throw new Error('Method not implemented.');
+                    },
+                    hide(): void {
+                        throw new Error('Method not implemented.');
+                    }
+                };
+                
+                if (includedEditor) {
+                    const includedFileContent = await vscode.workspace.fs.readFile(includedFileUri);
+                    const includedFileText = includedFileContent.toString();
+
+                    const tree_root = await parseText(includedFileText);
+                    await this.visit(tree_root, includedEditor, diags);
+                }
+            }*/
             else{
                 if(child !== null){
-                    this.visit(child, editor, diags);
+                    await this.visit(child, editor, diags);
                 }
             }
         }
         return this.symbolTable
     };
 
+    //Method used to register vars found by find variables function 
     private register_vars_rule(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor, root : Parser.SyntaxNode){
         let vars: Parser.SyntaxNode[] = find_variables(node);
                 for(let k = 0; k < vars.length; k++){
@@ -368,6 +444,7 @@ class SymbolTableVisitor{
                     }
                 }
     }
+
 
     private register_vars_left_macro_part(node :Parser.SyntaxNode, type : DeclarationType, editor : vscode.TextEditor, root : Parser.SyntaxNode){
         if(node.grammarType === DeclarationType.MVONF){
@@ -534,6 +611,10 @@ export class TamarinSymbolTable{
         return this.symbols;
     };
 
+    public setSymbols(symbols : TamarinSymbol[]): void{
+        this.symbols = symbols;
+    }
+
     public getSymbol(int : number):TamarinSymbol{
         return this.symbols[int];
     };
@@ -544,9 +625,8 @@ export class TamarinSymbolTable{
         this.editor = editor;
     }
 
-    public update_table(){
-        let visitor : SymbolTableVisitor = new SymbolTableVisitor;
-        visitor.visit(this.root_node, this.editor, this.diags)
+    public unshift(symbol: TamarinSymbol): void {
+        this.symbols.unshift(symbol);
     }
-    
+
 };

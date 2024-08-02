@@ -4,6 +4,8 @@ import path = require('path');
 
 export function runShortcut(context : vscode.ExtensionContext){
 
+//Feature to run tamarin directly using vscode just click on the bottom right handcorner and select the mode.
+
 let playButton : vscode.StatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 playButton.text = "$(triangle-right) Run";
 playButton.command = "tamarin.showActions";

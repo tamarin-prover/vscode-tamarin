@@ -95,6 +95,18 @@ export function RenameCommand(context : vscode.ExtensionContext){
                     replace_symbol(current_symbol, activeEditor, newName, edit);
                 }
             }
+            else if(current_symbol.declaration === DeclarationType.LEquationVariable || current_symbol.declaration === DeclarationType.REquationVariable ){
+                if(corresponding_symbol?.context.id === current_symbol.context.id && chosenSymbolName === current_symbol.name){
+                    replace_count ++
+                    replace_symbol(current_symbol, activeEditor, newName, edit);
+                }
+            }
+            else if(current_symbol.declaration === DeclarationType.LMacroVariable || current_symbol.declaration === DeclarationType.RMacroVariable ){
+                if(corresponding_symbol?.context.id === current_symbol.context.id && chosenSymbolName === current_symbol.name){
+                    replace_count ++
+                    replace_symbol(current_symbol, activeEditor, newName, edit);
+                }
+            }
             else if( current_symbol.name === chosenSymbolName && current_symbol.declaration === corresponding_symbol?.declaration){
                 replace_count ++
                 replace_symbol(current_symbol, activeEditor, newName, edit);

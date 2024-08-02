@@ -155,6 +155,7 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
                 }
             }
         }
+        // Check about the equation variables
         else if (current_symbol.declaration === DeclarationType.REquationVariable){
             let isbreak = false;
             for (let symbol of symbol_table.getSymbols()){
@@ -167,6 +168,7 @@ function check_variables_type_is_consistent_inside_a_rule(symbol_table : Tamarin
                 build_error_display(current_symbol.node, editor, diags, "Error : this variable doesn't exist on the left side of the equation")
             }
         }
+        // Check about macro variables 
         else if (current_symbol.declaration === DeclarationType.RMacroVariable){
             let isbreak = false;
             if(current_symbol.type === '$'){
@@ -219,7 +221,7 @@ function check_case_sensitivity(symbol_table : TamarinSymbolTable, editor: vscod
                         }
                         const distance = levenshteinDistance(name, name2);
                         if (distance < 3 && !facts.includes(current_symbol.name)) { // threshold value
-                            const diagnostic = build_warning_display(current_symbol.node, editor, diags, "Warning: did you mean " + name2 + " ? (" + distance + "characters away)")
+                            const diagnostic = build_warning_display(current_symbol.node, editor, diags, "Warning: did you mean " + name2 + " ? (" + distance + " characters away)")
                             diagnostic.code = "wrongFactName";
                             const range = current_symbol.name_range;
                             const fix = new vscode.CodeAction("Replace with " + name2, vscode.CodeActionKind.QuickFix);
@@ -350,7 +352,7 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
                             }
                             else{
                                 if(current_symbol.declaration === DeclarationType.NARY){
-                                    errors.push(current_symbol.name);                                    
+                                    build_error_display(current_symbol.node, editor, diags, "Error : incorrect arity for this function, "+ known_functions[k].arity + " arguments required")                                  
                                 }
                                 else if( current_symbol.declaration === DeclarationType.LinearF || current_symbol.declaration === DeclarationType.PersistentF){
                                     errors.push(current_symbol.name);                                    
@@ -386,29 +388,32 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
                     isbreak = true;
                     break;
                 }
-                if (typeof symbol.name === 'string' && typeof functionSymbol.name === 'string' && symbol.name !== functionSymbol.name && symbol.arity === functionSymbol.arity) {
-                    const distance = levenshteinDistance(symbol.name, functionSymbol.name);
-                    if (distance < 3) { // threshold value
-                        const diagnostic = build_warning_display(symbol.node, editor, diags, "Warning: did you mean " + functionSymbol.name + " ? (" + distance + "characters away)");
-                        diagnostic.code = "wrongFunctionName";
-                        const range = symbol.name_range;
-                        const fix = new vscode.CodeAction("Replace with " + functionSymbol.name, vscode.CodeActionKind.QuickFix);
-                        fix.edit = new vscode.WorkspaceEdit();
-                        fix.edit.replace(editor.document.uri, range, functionSymbol.name);
-                        fix.diagnostics = [diagnostic];
-                        fix.isPreferred = true;
-                        fixMap.set(diagnostic, fix);
-                    }
-                }
             }
             if(!isbreak){
                 build_error_display(symbol.node, editor, diags, "Error : unknown function or macro");
+                for(let functionSymbol of known_functions){
+                    if (typeof symbol.name === 'string' && typeof functionSymbol.name === 'string' /*condition to use them in the block*/&& symbol.name !== functionSymbol.name && symbol.arity === functionSymbol.arity ) {
+                        const distance = levenshteinDistance(symbol.name, functionSymbol.name);
+                        if (distance < 3) { // threshold value
+                            const diagnostic = build_warning_display(symbol.node, editor, diags, "Warning: did you mean " + functionSymbol.name + " ? (" + distance + "characters away)");
+                            diagnostic.code = "wrongFunctionName";
+                            const range = symbol.name_range;
+                            const fix = new vscode.CodeAction("Replace with " + functionSymbol.name, vscode.CodeActionKind.QuickFix);
+                            fix.edit = new vscode.WorkspaceEdit();
+                            fix.edit.replace(editor.document.uri, range, functionSymbol.name);
+                            fix.diagnostics = [diagnostic];
+                            fix.isPreferred = true;
+                            fixMap.set(diagnostic, fix);
+                        }
+                    }
+                }
             }
+
         }
     }
 }    
 
-/* Function used to check if a term is associated to qa quantified formula in a lemma */ 
+/* Function used to check if a term is associated to a quantified formula in a lemma */ 
 function check_free_term_in_lemma(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let lemma_vars : TamarinSymbol[] = [];
     for (let symbol of symbol_table.getSymbols()){

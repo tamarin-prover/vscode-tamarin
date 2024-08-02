@@ -11,7 +11,8 @@ theory WideMouthedFrog
 begin
 
 
-equations : Blablac(c,a,b) = c + b + diff(mazvom, vzzvzv)
+equations : Blablac(c,a,b) = d
+functions : Blablac/3 [private]
 
 lemma coucou: 
   
