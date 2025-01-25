@@ -44,18 +44,26 @@ I tried to personnalize error messages according to the different cases
 I did the most common ones*/
 export async function detect_errors(editeur: vscode.TextEditor): Promise<Parser.SyntaxNode|void> {
     let editor = editeur;
+    
+    if (!editor) {
+        return;
+    }
+
+    // fail-save to prevent analysis of non-tamarin files
+    const languageId = editor.document.languageId
+    if (!(languageId === 'tamarin')){
+        return;
+    }
+
     await Parser.init();
     const parser = new Parser();
     const parserPath = path.join(__dirname + '../../../', 'src', 'grammar', 'parser-tamarin.wasm'); //Charge la grammaire tree-sitter pour parser
     const Tamarin =  await Parser.Language.load(parserPath);
     parser.setLanguage(Tamarin);
-    if (!editor) {
-        return;
-    }
+    
     let diags: vscode.Diagnostic[] = [];
     let text = editor.document.getText();
     const tree =  parser.parse(text);
-
     
     function build_error_display(node : Parser.SyntaxNode, editeur: vscode.TextEditor, message : string){
         let start = node.startIndex;
