@@ -136,7 +136,7 @@ export function get_range(node : Parser.SyntaxNode|null, editor : vscode.TextEdi
 export async function parseText(includedFileText : string):Promise<Parser.SyntaxNode>{
     await Parser.init();
     const parser = new Parser();
-    const parserPath = path.join(__dirname + '../../../', 'src', 'grammar', 'parser-tamarin.wasm'); //Charge la grammaire tree-sitter pour parser
+    const parserPath = path.join(__dirname, '..' , 'grammar', 'tree-sitter-tamarin', 'tree-sitter-spthy.wasm');
     const Tamarin = await Parser.Language.load(parserPath);
     parser.setLanguage(Tamarin);
     const tree = parser.parse(includedFileText);
@@ -224,8 +224,8 @@ const AssociatedFunctions: string[][] =
 ['h', '1'],
 ['sdec', '2', 'senc', '2'],
 ['aenc', '2', 'adec', '2', 'pk', '1'],
-['sign', '2', 'verify', '3', 'pk', '1', 'true', 0],
-['revealSign', '2', 'revealVerify', '3', 'getMessage', '1', 'pk', '1', 'true', 0],
+['sign', '2', 'verify', '3', 'pk', '1', 'true', '0'],
+['revealSign', '2', 'revealVerify', '3', 'getMessage', '1', 'pk', '1', 'true', '0'],
 ['pmult', '2', 'em', '2'],
 ['XOR', '2', 'zero', '0'],
 ['fst', '1', 'snd', '1', 'pair', '2']
@@ -504,7 +504,7 @@ class SymbolTableVisitor{
         }
     }
 
-    /* Function unsed to register the facts found with find_linear_fact*/
+    /* Function used to register the facts found with find_linear_fact*/
     private register_facts_searched(node :Parser.SyntaxNode, editor : vscode.TextEditor, root : Parser.SyntaxNode, type ?: DeclarationType){
         let vars: Parser.SyntaxNode[] = find_linear_fact(node);
         for(let k = 0; k < vars.length; k++){
