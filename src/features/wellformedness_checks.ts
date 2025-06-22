@@ -71,6 +71,7 @@ function get_child_grammar_type(node :Parser.SyntaxNode): string[]{
     return results;
 }
 
+
 /* Function used to perform checks on all reserved facts,
  checks if they are in the wright place and used with the correct arity */
 export function check_reserved_facts(node : Parser.SyntaxNode, editor : vscode.TextEditor, diags : vscode.Diagnostic[]): void{
@@ -326,10 +327,10 @@ function check_action_fact(symbol_table : TamarinSymbolTable, editor: vscode.Tex
 
 /* Function to check macros, functions, facts arity and to provide
  quick fixes for wrong function name still using leverstein distance */
+
 function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable, editor: vscode.TextEditor, diags: vscode.Diagnostic[]){
     let known_functions : TamarinSymbol[] = [];
     let errors : string[] = []
-
     function getNames(list : TamarinSymbol[]): string[]{
         let str_list : string[] = [];
         for(let symbol of list){
@@ -392,7 +393,7 @@ function check_function_macros_and_facts_arity(symbol_table : TamarinSymbolTable
             if(!isbreak){
                 build_error_display(symbol.node, editor, diags, "Error : unknown function or macro");
                 for(let functionSymbol of known_functions){
-                    if (typeof symbol.name === 'string' && typeof functionSymbol.name === 'string' /*condition to use them in the block*/&& symbol.name !== functionSymbol.name && symbol.arity === functionSymbol.arity ) {
+                    if (typeof symbol.name === 'string' && typeof functionSymbol.name === 'string'&& symbol.name !== functionSymbol.name && symbol.arity === functionSymbol.arity ) {
                         const distance = levenshteinDistance(symbol.name, functionSymbol.name);
                         if (distance < 3) { // threshold value
                             const diagnostic = build_warning_display(symbol.node, editor, diags, "Warning: did you mean " + functionSymbol.name + " ? (" + distance + "characters away)");
@@ -630,9 +631,9 @@ export function checks_with_table(symbol_table : TamarinSymbolTable, editor: vsc
     check_variable_is_defined_in_premise(symbol_table, editor, diags);
     check_action_fact(symbol_table, editor, diags);
     check_function_macros_and_facts_arity(symbol_table, editor, diags);
+    //checkArityProblems(symbol_table,editor,diags);
     check_free_term_in_lemma(symbol_table, editor, diags);
     check_macro_not_in_equation(symbol_table, editor, diags)
     check_infix_operators(symbol_table, editor, diags, root);
     check_case_sensitivity(symbol_table, editor, diags);
 };
-

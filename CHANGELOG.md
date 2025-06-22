@@ -1,9 +1,23 @@
 # Change Log
 
+## V1.1.6
+Removed all uncessary packages 
+
+## V1.1.5
+### Fixes
+-Functions in lemmas are now correctly detected
+-Ctrl+tab hotkey has been changed to Ctrl+alt+n
+-Non tamarin files are not opened by the plugin anymore
+
+### Features
+-Enhanced documention
+-New grammar added (Error display and highlithing updated accordingly)
+-.splib added as an official extension
+
 ## V1.1.4
-Small fixes about "fst", "snd", and "pair" functions.
-New logo.
-Comments in the code.
+-Small fixes about "fst", "snd", and "pair" functions.
+-New logo.
+-Comments in the code.
 
 ## V1.1.0
 New welformedness checks and fixes.

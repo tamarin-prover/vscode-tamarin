@@ -72,8 +72,8 @@
     },
     {
       "match": "(lemma)\\s+(\\w+)\\s*(\\[(?:(?:sources|use_induction|reuse)|(?:(?:hide_lemma)=\\w+))(?:,(?:(?:sources|use_induction|reuse)|(?:(?:hide_lemma)=\\w+)))*\\])?\\s*:",
-      "captures": {
-        "1": {
+          "captures": {
+            "1": {
           "name": "keyword.control"
         },
         "2": {
