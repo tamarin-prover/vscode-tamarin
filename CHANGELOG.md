@@ -1,4 +1,20 @@
 # Change Log
+## V1.2.0
+### Language Server Protocol
+Lsp has been fully implemented : This includes
+- Redesign of plugin's structure
+- Communication between client and server with JSON-RPC
+- Proper implementation of go_to and rename functions
+Performance issues due to the fact that the plugin opened all files even non tamarin ones is now fixed for good
+### Refactoring , tests and optimisations
+- Wellformedness checks has been divided into 10 new files (see server/src/features/checks)
+- Symbol Table build has also been refactored (server/src/symbol_table)
+- Linter has been added 
+- 62 new unitary tests are added (see full list on Documentation/Tests.md)
+- Parser is now initialised only when opening a new file , instead of every change
+### Fixes
+- New Wellformedness checks to check equalities
+- naturals_numbers builtin added
 
 ## V1.1.6
 Removed all uncessary packages 

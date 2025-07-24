@@ -12,8 +12,8 @@ build/
 .vscode-test/
 
 run.sh
-
+*.pdf
 .DS_Store
-
+tsconfig.tsbuildinfo
 *.antlr
 Documentation/.obsidian

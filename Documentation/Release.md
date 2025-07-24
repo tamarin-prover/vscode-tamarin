@@ -1,5 +1,5 @@
 ## Build
-*Do not forget to have ```.wasm``` parser build , see [parser documentation](Parser.md) for more details*
+*Do not forget to have ```.wasm``` parser built , see [parser documentation](Parser.md) for more details*
 First you will have to build the package containing the extension, it will include all files and folders in the project except those that are in the ```.vscodeignore file.```
 ```npm install```
 ```npx vsce package```
