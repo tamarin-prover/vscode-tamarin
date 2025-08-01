@@ -1,5 +1,5 @@
 {
-  "files": [], // Ce fichier ne compile rien lui-même
+  "files": [],
   "references": [
     { "path": "./client" },
     { "path": "./server" }

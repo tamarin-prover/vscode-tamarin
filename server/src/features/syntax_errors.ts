@@ -3,7 +3,6 @@ import { Diagnostic , DiagnosticSeverity ,Range , Position} from 'vscode-languag
 import { TextDocument } from "vscode-languageserver-textdocument";
 import {build_error_display} from './checks/utils'
 
-// TODO , pattern matching ? 
 //given an node returns his index in his father's children list 
 function get_child_index(node : Parser.SyntaxNode): number|null{
     if(node.parent === null ){

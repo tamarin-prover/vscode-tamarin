@@ -27,14 +27,6 @@ describe('checkFreeTerms', () => {
         const diagnostics = check_free_term_in_lemma(symbolTable, mockDocument);
         expect(diagnostics).toHaveLength(0);
     });
-    //FIXME 
-    it('Should not return any errors if the variable is bound by a quantifier in a parent context', () => {
-        const symbols: TamarinSymbol[] = [
-        ];
-        const symbolTable = createMockSymbolTable(symbols);
-        const diagnostics = check_free_term_in_lemma(symbolTable, mockDocument);
-        expect(diagnostics).toHaveLength(0);
-    });
 
     it('Should return a warning if the variable is not bound by any quantifier', () => {
         const grandParentContext = createMockNode({ grammarType: 'theory' });

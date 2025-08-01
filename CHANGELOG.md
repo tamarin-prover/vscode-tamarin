@@ -1,5 +1,13 @@
+
 # Change Log
-## V1.2.0
+## V2.1.0
+Recursive Analysis has been implemented.
+- Symbols imported from other Tamarin files are no longer reported as errors.
+- Syntax highlighting has been updated
+- Few wellformedness Checks has been updated as well of a few tests
+- 2 new unitary tests to test wellformedness checks with symbols imported from another file.
+- .splib parsing has been added , now imported files must be .splib
+## V2.0.0
 ### Language Server Protocol
 Lsp has been fully implemented : This includes
 - Redesign of plugin's structure

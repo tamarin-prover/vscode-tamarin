@@ -1,7 +1,7 @@
 {
 	"name": "tamarin-prover-vscode-server",
 	"license": "MIT",
-	"version": "1.1.6",
+	"version": "2.1.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/tamarin-prover/vscode-tamarin.git"

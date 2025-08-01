@@ -1,7 +1,8 @@
 # Using tree-sitter in the Tamarin plugin
-
-First you will need to go to server/grammar/tree-sitter-tamarin folder.
-```cd server/grammar/tree-sitter-tamarin```
+First you will need to go to server/grammar/ folder
+```cd server/grammar/```
+There is two parsers. One for .spthy files and one for .splib files
+Those two parsers uses common_grammar.js.
 
 ## Installing dependencies
 ### On macOS
@@ -18,12 +19,12 @@ These commands are necessary to build the parser.
 ## Updating the grammar
 This plugin uses [tamarin's grammar](https://github.com/tamarin-prover/tamarin-prover/blob/develop/tree-sitter/tree-sitter-spthy/grammar.js)
 This grammar might be outdated compared to the tamarin's newest grammar, missing new functionalities.
+In order to update the grammar , you must change the content of common_grammar.js file in server/grammar/ folder to the current one (copy paste it and remove any rule that is present in spthy and splib grammars).
 
-In order to update the grammar , you must change the content of grammar.js file in server/grammar/tree-sitter-tamarin folder to the current one (copy paste it).
-
-Then , do the following commands.
+Then , do the following commands for spthy and splib.
 ```tree-sitter generate``` This command creates all the files needed to use the grammar with Typescript
 ```tree-sitter build-wasm``` This command creates a dynamic .wasm library which enables you to use the parser inside the vscode plugin (server/grammar/tree-sitter-tamarin/tree-sitter-spthy.wasm).
+Finally, move both parsers into server/grammar/tree-sitter-tamarin folder
 
 ### Things you must consider when updating the grammar
 Updating the grammar may take the symbol table and textmate grammar obsolete, be careful.

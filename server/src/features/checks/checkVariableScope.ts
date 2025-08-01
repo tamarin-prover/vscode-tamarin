@@ -10,7 +10,7 @@ export function check_variable_is_defined_in_premise(symbol_table : TamarinSymbo
     const diags : Diagnostic[] = [];
     for( let i = 0 ; i < symbol_table.getSymbols().length; i++){
         const current_symbol = symbol_table.getSymbol(i);
-        if(current_symbol.type === '$'){continue}  // Do not take into account public variables
+        if(current_symbol.type === '$'){continue} 
         if(current_symbol.declaration === DeclarationType.CCLVariable || current_symbol.declaration === DeclarationType.ActionFVariable){
             const current_context = current_symbol.context;
             let is_break = false;

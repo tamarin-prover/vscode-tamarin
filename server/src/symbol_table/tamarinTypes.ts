@@ -25,7 +25,7 @@ export enum DeclarationType{
     Conclusion = 'conclusion',
     Premise = 'premise',
 
-
+    Include = 'include',
     Lemma = 'lemma',
     Restriction = 'restriction',
     Rule = 'rule',

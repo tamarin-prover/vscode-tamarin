@@ -3,7 +3,7 @@ import {TamarinSymbol } from '../../symbol_table/tamarinTypes';
 import { DeclarationType } from '../../symbol_table/tamarinTypes'; 
 import {check_case_sensitivity} from '../checks/checkSpelling'; 
 import { createMockSymbol, createMockSymbolTable} from './utils';
-
+import {TamarinSymbolTable} from "../../symbol_table/create_symbol_table";
 
 const mockDocument = TextDocument.create('file:///test.spthy', 'tamarin', 1, '');
 
@@ -17,7 +17,12 @@ describe('checkSpelling', () => {
             }),
         ];
         const symbolTable = createMockSymbolTable(symbols);
-        const diagnostics = check_case_sensitivity(symbolTable, mockDocument);
+        const libTable = createMockSymbolTable([]);
+        const allSymbolTables = new Map<string, TamarinSymbolTable>([
+        ['file:///lib.spthy', libTable],
+        ['file:///current.spthy', symbolTable]
+        ]);
+        const diagnostics = check_case_sensitivity(symbolTable, mockDocument,allSymbolTables);
         expect(diagnostics).toHaveLength(0);
     });
 
@@ -30,7 +35,12 @@ describe('checkSpelling', () => {
             }),
         ];
         const symbolTable = createMockSymbolTable(symbols);
-        const diagnostics = check_case_sensitivity(symbolTable, mockDocument);
+        const libTable = createMockSymbolTable([]);
+        const allSymbolTables = new Map<string, TamarinSymbolTable>([
+        ['file:///lib.spthy', libTable],
+        ['file:///current.spthy', symbolTable]
+        ]);
+        const diagnostics = check_case_sensitivity(symbolTable, mockDocument,allSymbolTables);
         expect(diagnostics).toHaveLength(1);
         expect(diagnostics[0].message).toContain("must start with an uppercase");
     });        
@@ -48,7 +58,12 @@ describe('checkSpelling', () => {
             }),
         ];
         const symbolTable = createMockSymbolTable(symbols);
-        const diagnostics = check_case_sensitivity(symbolTable, mockDocument);
+        const libTable = createMockSymbolTable([]);
+        const allSymbolTables = new Map<string, TamarinSymbolTable>([
+        ['file:///lib.spthy', libTable],
+        ['file:///current.spthy', symbolTable]
+        ]);
+        const diagnostics = check_case_sensitivity(symbolTable, mockDocument,allSymbolTables);
         expect(diagnostics).toHaveLength(0);
     });   
 
@@ -67,9 +82,14 @@ describe('checkSpelling', () => {
             }),
         ];
         const symbolTable = createMockSymbolTable(symbols);
-        const diagnostics = check_case_sensitivity(symbolTable, mockDocument);
+        const libTable = createMockSymbolTable([]);
+        const allSymbolTables = new Map<string, TamarinSymbolTable>([
+        ['file:///lib.spthy', libTable],
+        ['file:///current.spthy', symbolTable]
+        ]);
+        const diagnostics = check_case_sensitivity(symbolTable, mockDocument,allSymbolTables);
         expect(diagnostics).toHaveLength(1);
-        expect(diagnostics[0].message).toContain("did you mean MyFact ?");
+        expect(diagnostics[0].message).toContain("Warning: did you mean 'MyFact'?");
     });   
 
     it('Should not suggest a correction for a fact too far from the first one', () => {
@@ -87,7 +107,12 @@ describe('checkSpelling', () => {
             }),
         ];
         const symbolTable = createMockSymbolTable(symbols);
-        const diagnostics = check_case_sensitivity(symbolTable, mockDocument);
+        const libTable = createMockSymbolTable([]);
+        const allSymbolTables = new Map<string, TamarinSymbolTable>([
+        ['file:///lib.spthy', libTable],
+        ['file:///current.spthy', symbolTable]
+        ]);
+        const diagnostics = check_case_sensitivity(symbolTable, mockDocument,allSymbolTables);
         expect(diagnostics).toHaveLength(0);
     });  
 
@@ -106,7 +131,12 @@ describe('checkSpelling', () => {
             }),
         ];
         const symbolTable = createMockSymbolTable(symbols);
-        const diagnostics = check_case_sensitivity(symbolTable, mockDocument);
+        const libTable = createMockSymbolTable([]);
+        const allSymbolTables = new Map<string, TamarinSymbolTable>([
+        ['file:///lib.spthy', libTable],
+        ['file:///current.spthy', symbolTable]
+        ]);
+        const diagnostics = check_case_sensitivity(symbolTable, mockDocument,allSymbolTables);
         expect(diagnostics).toHaveLength(0);
     });     
     
@@ -136,8 +166,12 @@ describe('checkSpelling', () => {
 
         ];
         const symbolTable = createMockSymbolTable(symbols);
-        const diagnostics = check_case_sensitivity(symbolTable, mockDocument);
-        expect(diagnostics).toHaveLength(1); //Only one suggestion
+        const libTable = createMockSymbolTable([]);
+        const allSymbolTables = new Map<string, TamarinSymbolTable>([
+        ['file:///lib.spthy', libTable],
+        ['file:///current.spthy', symbolTable]
+        ]);
+        const diagnostics = check_case_sensitivity(symbolTable, mockDocument,allSymbolTables);
+        expect(diagnostics).toHaveLength(2);
     });   
-
 });

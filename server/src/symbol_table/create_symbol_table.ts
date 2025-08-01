@@ -35,6 +35,12 @@ function convert_linear_facts(ts : TamarinSymbolTable){
     }
 }
 
+function visit_include(node: Parser.SyntaxNode, symbolTable: TamarinSymbolTable) {
+    const match = node.text.match(/#include\s+"([^"]+)"/);
+    if (match && match[1]) {
+        symbolTable.addInclude(match[1]);
+    }
+}
 
 function convert(grammar_type : string) : DeclarationType{
     if(grammar_type === 'nary_app'){return DeclarationType.NARY}
@@ -49,11 +55,9 @@ class SymbolTableVisitor{
         this.context = context
     }
     private visitcounter : number = 0; // Used to add fst snd and pair symbols only once
-    
     protected defaultResult(): TamarinSymbolTable {
         return this.symbolTable;
     }
-
     /* Method that builds the symbol table adding every symbols while visiting the AST*/
     public async visit(root : Parser.SyntaxNode, document: TextDocument, diags: Diagnostic[]): Promise<TamarinSymbolTable>{
         //Include default functions but the neither the nodes or the name range are correct
@@ -73,6 +77,9 @@ class SymbolTableVisitor{
                 this.registerident(root, DeclarationType.Lemma, getName(child?.nextSibling, document), root.parent ,get_range(child?.nextSibling))
                 this.register_facts_searched(root, document, root, DeclarationType.ActionF);
                 this.register_vars_lemma(root, DeclarationType.LemmaVariable, document)
+            }
+            else if (child?.grammarType === DeclarationType.Include){
+                visit_include(root, this.symbolTable);
             }
             else if (child?.grammarType === DeclarationType.Restriction && root.grammarType === 'restriction' && root.parent !== null && child?.nextSibling){
                 this.registerident(root, DeclarationType.Restriction, getName(child?.nextSibling, document), root.parent ,get_range(child?.nextSibling))
@@ -206,7 +213,6 @@ class SymbolTableVisitor{
         }
         return this.symbolTable
     }
-
     //Method used to register vars found by find variables function 
     private register_vars_rule(node :Parser.SyntaxNode, type : DeclarationType, document : TextDocument, root : Parser.SyntaxNode){
         const vars: Parser.SyntaxNode[] = find_variables(node);
@@ -426,9 +432,14 @@ export function set_associated_qf(symbol : TamarinSymbol, node : Parser.SyntaxNo
 
 export class TamarinSymbolTable{
     private symbols : TamarinSymbol[] = [];
-
+    private includes: string[] = [];
     private root_node!: Parser.SyntaxNode;
-
+    public addInclude(includePath: string): void {
+        this.includes.push(includePath);
+    }
+    public getIncludes(): string[] {
+        return this.includes;
+    }
     public addSymbol(symbol: TamarinSymbol) {
         this.symbols.push(symbol);
     }

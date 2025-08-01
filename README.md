@@ -21,8 +21,11 @@ Features:
     - Provides a quick fix for function names (suggestions based on editing distance).
     - Checks wether built-ins are imported when encountering corresponding functions or symbols (provides a quick fix to import the right built-in).
     This is a subset of the checks performed by Tamarin. For more details on Tamarin's wellformedness checks, see the corresponding [Tamarin Prover manual section](https://tamarin-prover.com/manual/master/book/010_modeling-issues.html).
-- Implements Language Server Protocol
-- Adds 62 unitary tests 
+- Supports two file types:
+    - spthy is the default format for Tamarin files.
+    - splib files are library files that do not contain the theory name, "begin" and "end". They can be imported using ``` include "file.splib"```.
+- Supports recursive analysis, ie, included files are taken into account for wellformedness checks .
 
 - Use right click and ```Rename``` on an indentifier to rename all occurences of it inside a rule or a lemma.
 - Use right click and ```Search Definition``` on facts or function names and press ```CTRL```+```ALT```+```n``` to navigate through all occurences.
+

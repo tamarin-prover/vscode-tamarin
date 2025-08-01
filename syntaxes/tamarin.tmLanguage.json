@@ -6,9 +6,28 @@
   "name": "tamarin",
   "patterns": [
     {
+      "begin": "(#include)(\\s+)",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.preprocessor.tamarin" }, 
+        "2": { "name": "punctuation.whitespace.tamarin" }   
+      },
+      "end": "(?=$)", 
+      "patterns": [
+        {
+          "name": "string.quoted.double.filename.tamarin",
+          "begin": "\"",
+          "end": "\""
+        }
+      ]
+    },
+    {
       "begin": "(?<!\\\\)\\/\\*",
       "end": "\\*\\/",
       "name": "comment.block"
+    },
+    {
+      "name": "keyword.control.preprocessor.tamarin",
+      "match": "^\\s*#\\b(if|ifdef|ifndef|else|elif|endif|define|undef)\\b"
     },
     {
       "begin": "(?<!\\\\)\\/\\/",
